@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <widget class="QPushButton" name="solution_pushButton">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>40</y>
+      <width>101</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Solution</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="brutalsol_pushButton">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>80</y>
+      <width>101</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Brutal Solution</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="generator_pushButton">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>0</y>
+      <width>101</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Generator</string>
+    </property>
+    <property name="checkable">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="run_pushButton">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>160</y>
+      <width>101</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Run</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="build_pushButton">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>120</y>
+      <width>101</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Build</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="generator_checkBox">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>10</y>
+      <width>21</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="solution_checkBox">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>50</y>
+      <width>21</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="brutalsol_checkBox">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>90</y>
+      <width>21</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QProgressBar" name="progressBar">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>230</y>
+      <width>101</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="value">
+     <number>100</number>
+    </property>
+    <property name="textVisible">
+     <bool>false</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>400</width>
+     <height>30</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>
