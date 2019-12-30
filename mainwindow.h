@@ -30,6 +30,12 @@ private slots:
 
     void _run();
 
+    int _system(std::string);
+
+    void on_show_time_checkBox_stateChanged(int arg1);
+
+    void on_test_number_comboBox_currentIndexChanged(int index);
+
 private:
     Ui::MainWindow *ui;
 };
