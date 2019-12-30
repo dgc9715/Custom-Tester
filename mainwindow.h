@@ -26,6 +26,10 @@ private slots:
 
     void on_run_pushButton_clicked();
 
+    void on_view_diff_pushButton_clicked();
+
+    void _run();
+
 private:
     Ui::MainWindow *ui;
 };

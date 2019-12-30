@@ -143,7 +143,20 @@
      <number>100</number>
     </property>
     <property name="textVisible">
-     <bool>false</bool>
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="view_diff_pushButton">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>160</y>
+      <width>91</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>View Diff</string>
     </property>
    </widget>
   </widget>
