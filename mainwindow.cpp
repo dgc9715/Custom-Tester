@@ -2,6 +2,10 @@
 #include "ui_mainwindow.h"
 #include "config.h"
 #include <chrono>
+#include <QDir>
+#include <QTimer>
+#include <QThread>
+#include <iostream>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -17,8 +21,28 @@ MainWindow::MainWindow(QWidget *parent) :
     }
     for (int i = 1; i <= 9; ++i)
         ui->test_number_comboBox->addItem(QString(("1e" + std::to_string(i)).data()));
-    ui->test_number_comboBox->setCurrentIndex(4);
+    ui->test_number_comboBox->setCurrentIndex(2);
+
+    if (!QDir(QString(workspace_data_path.data())).exists())
+        QDir().mkdir(QString(workspace_data_path.data()));
+
+//    QThread *timerthread = new QThread(this);
+//    QTimer *timer = new QTimer(0);
+//    timer->setInterval(timer_interval);
+//    connect(timer, SIGNAL(timeout()), this, SLOT(timer_timeout()));
+//    timer->start();
+//    timer->moveToThread(timerthread);
+//    timerthread->start();
+    //timer->start(timer_interval);
 }
+
+//int ggg = 0;
+//void MainWindow::timer_timeout()
+//{
+//    QApplication::processEvents();
+//    std::cerr << "proc " << ggg++ << std::endl;
+//    std::cerr << "proc end" << std::endl;
+//}
 
 MainWindow::~MainWindow()
 {
@@ -30,16 +54,21 @@ inline std::string get_path(std::string full_name, bool data_path = false)
     return "'" + (data_path ? workspace_data_path : workspace_path) + full_name + "'";
 }
 
+inline std::string get_compiled_name(std::string name)
+{
+    return "custom_tester_" + name + ".out";
+}
+
 inline std::string get_build_command(std::string name)
 {
-    return "g++ " + build_flags + " " + get_path(name + ".cpp") + " -o " + get_path(name + ".out", true);
+    return "g++ " + build_flags + " " + get_path(name + ".cpp") + " -o " + get_path(get_compiled_name(name), true);
 }
 
 int MainWindow::_system(std::string s)
 {
     s += " 2> " + get_path("log.txt", true);
     int x = system(s.data());
-    if (x)
+    if (x && (s.substr(0, 3) == "g++" || run_alive))
     {
         if (s.substr(0, 3) == "cmp") on_view_diff_pushButton_clicked();
         else system(("subl " + get_path("log.txt", true)).data());
@@ -49,17 +78,17 @@ int MainWindow::_system(std::string s)
 
 void MainWindow::on_generator_pushButton_clicked()
 {
-    system(("subl " + get_path("gen.cpp")).data());
+    system(("subl " + get_path(generator_name + ".cpp")).data());
 }
 
 void MainWindow::on_solution_pushButton_clicked()
 {
-    system(("subl " + get_path("my.cpp")).data());
+    system(("subl " + get_path(solution_name + ".cpp")).data());
 }
 
 void MainWindow::on_brutalsol_pushButton_clicked()
 {
-    system(("subl " + get_path("t.cpp")).data());
+    system(("subl " + get_path(brutalsol_name + ".cpp")).data());
 }
 
 void MainWindow::on_build_pushButton_clicked()
@@ -75,26 +104,25 @@ void MainWindow::on_build_pushButton_clicked()
     bool ok = true;
     if (ui->generator_checkBox->isChecked())
     {
-        if (ok && _system(get_build_command("gen"))) ok = false;
+        if (ok && _system(get_build_command(generator_name))) ok = false;
         ui->progressBar->setValue(ui->progressBar->value()+1);
     }
 
     if (ui->solution_checkBox->isChecked())
     {
-        if (ok && _system(get_build_command("my"))) ok = false;
+        if (ok && _system(get_build_command(solution_name))) ok = false;
         ui->progressBar->setValue(ui->progressBar->value()+1);
     }
 
     if (ui->brutalsol_checkBox->isChecked())
     {
-        if (ok && _system(get_build_command("t"))) ok = false;
+        if (ok && _system(get_build_command(brutalsol_name))) ok = false;
         ui->progressBar->setValue(ui->progressBar->value()+1);
     }
 
     ui->progressBar->hide();
 }
 
-bool run_alive = false;
 typedef std::chrono::_V2::system_clock::time_point timepoint;
 
 inline timepoint get_time()
@@ -120,18 +148,19 @@ void MainWindow::_run()
     while (ui->progressBar->value() != tests)
     {
         ui->curtest_label->setText(QString(("Running on test " + std::to_string(ui->progressBar->value()+1)).data()));
+        ui->curtest_label->repaint();
 
-        if (_system((get_path("gen.out", true) + " > " + get_path("a.txt", true)))) break;
+        if (_system((get_path(get_compiled_name(generator_name), true) + " > " + get_path(input_fullname, true)))) break;
 
         timepoint curtime = get_time();
-        if (_system((get_path("my.out", true) + " < " + get_path("a.txt", true) + " > " + get_path("my.txt", true)))) break;
+        if (_system((get_path(get_compiled_name(solution_name), true) + " < " + get_path(input_fullname, true) + " > " + get_path(solution_output_fullname, true)))) break;
         if (ui->show_time_checkBox->isChecked()) ui->solution_time_label->setText(get_elapsed(curtime));
 
         curtime = get_time();
-        if (_system((get_path("t.out", true) + " < " + get_path("a.txt", true) + " > " + get_path("t.txt", true)))) break;
+        if (_system((get_path(get_compiled_name(brutalsol_name), true) + " < " + get_path(input_fullname, true) + " > " + get_path(brutalsol_output_fullname, true)))) break;
         if (ui->show_time_checkBox->isChecked()) ui->brutalsol_time_label->setText(get_elapsed(curtime));
 
-        if (_system(("cmp " + get_path("my.txt", true) + " " + get_path("t.txt", true)).data())) break;
+        if (_system(("cmp " + get_path(solution_output_fullname, true) + " " + get_path(brutalsol_output_fullname, true)).data())) break;
 
         ui->progressBar->setValue(ui->progressBar->value()+1);
         QApplication::processEvents();
@@ -159,14 +188,16 @@ void MainWindow::on_run_pushButton_clicked()
     }
 
     run_alive = false;
+    //////////////////////////////////////////////////////////////////////////////////////////
+    //pkill
     ui->run_pushButton->setText("Run");
     ui->build_pushButton->setEnabled(true);
 }
 
 void MainWindow::on_view_diff_pushButton_clicked()
 {
-    system(("subl " + get_path("a.txt", true)).data());
-    system(("subl -n " + get_path("my.txt", true) + " " + get_path("t.txt", true)
+    system(("subl " + get_path(input_fullname, true)).data());
+    system(("subl -n " + get_path(solution_output_fullname, true) + " " + get_path(brutalsol_output_fullname, true)
            + " --command 'sublimerge_diff_views {\"left_read_only\": true, \"right_read_only\": true}'").data());
 }
 

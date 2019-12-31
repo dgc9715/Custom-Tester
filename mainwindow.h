@@ -36,6 +36,8 @@ private slots:
 
     void on_test_number_comboBox_currentIndexChanged(int index);
 
+    //void timer_timeout();
+
 private:
     Ui::MainWindow *ui;
 };

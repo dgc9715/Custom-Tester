@@ -184,6 +184,9 @@
     <property name="text">
      <string>Show Time</string>
     </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QLabel" name="solution_time_label">
     <property name="geometry">
