@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QProcess>
 
 namespace Ui {
 class MainWindow;
@@ -30,7 +31,7 @@ private slots:
 
     void _run();
 
-    int _system(std::string);
+    int _system(std::string, std::string, std::string);
 
     void on_show_time_checkBox_stateChanged(int arg1);
 
@@ -40,6 +41,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    QProcess *myprocess;
 };
 
 #endif // MAINWINDOW_H

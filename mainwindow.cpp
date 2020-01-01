@@ -3,13 +3,16 @@
 #include "config.h"
 #include <chrono>
 #include <QDir>
+#include <QFile>
 #include <QTimer>
 #include <QThread>
+#include <QProcess>
 #include <iostream>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    myprocess(new QProcess())
 {
     ui->setupUi(this);
     ui->progressBar->hide();
@@ -25,33 +28,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     if (!QDir(QString(workspace_data_path.data())).exists())
         QDir().mkdir(QString(workspace_data_path.data()));
-
-//    QThread *timerthread = new QThread(this);
-//    QTimer *timer = new QTimer(0);
-//    timer->setInterval(timer_interval);
-//    connect(timer, SIGNAL(timeout()), this, SLOT(timer_timeout()));
-//    timer->start();
-//    timer->moveToThread(timerthread);
-//    timerthread->start();
-    //timer->start(timer_interval);
 }
-
-//int ggg = 0;
-//void MainWindow::timer_timeout()
-//{
-//    QApplication::processEvents();
-//    std::cerr << "proc " << ggg++ << std::endl;
-//    std::cerr << "proc end" << std::endl;
-//}
 
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
-inline std::string get_path(std::string full_name, bool data_path = false)
+inline std::string get_path(std::string full_name, bool data_path = false, bool add_quote = true)
 {
-    return "'" + (data_path ? workspace_data_path : workspace_path) + full_name + "'";
+    return (add_quote ? "'" : "") + (data_path ? workspace_data_path : workspace_path) + full_name + (add_quote ? "'" : "");
 }
 
 inline std::string get_compiled_name(std::string name)
@@ -64,13 +50,40 @@ inline std::string get_build_command(std::string name)
     return "g++ " + build_flags + " " + get_path(name + ".cpp") + " -o " + get_path(get_compiled_name(name), true);
 }
 
-int MainWindow::_system(std::string s)
+int MainWindow::_system(std::string programpath, std::string inputpath = "", std::string outputpath = "")
 {
-    s += " 2> " + get_path("log.txt", true);
-    int x = system(s.data());
-    if (x && (s.substr(0, 3) == "g++" || run_alive))
+    int x;
+    if (!inputpath.empty() || !outputpath.empty())
     {
-        if (s.substr(0, 3) == "cmp") on_view_diff_pushButton_clicked();
+        myprocess->setProgram(QString(programpath.data()));
+        if (!inputpath.empty()) myprocess->setStandardInputFile(QString(inputpath.data()));
+        if (!outputpath.empty()) myprocess->setStandardOutputFile(QString(outputpath.data()));
+        myprocess->start();
+        myprocess->waitForFinished(time_out);
+        x = myprocess->exitCode();
+        if (myprocess->errorString().toStdString() == "Process operation timed out") x = -1;
+        if (x)
+        {
+            QFile log(QString(get_path("log.txt", true, false).data()));
+            log.open(QIODevice::WriteOnly | QIODevice::Text);
+            log.write(programpath.data());
+            log.write("\n");
+            log.write(myprocess->errorString().toStdString().data());
+            log.write("\n");
+            log.write(("Exit Code: " + std::to_string(x)).data());
+            log.write("\n");
+            log.close();
+        }
+    }
+    else
+    {
+        programpath += " 2> " + get_path("log.txt", true);
+        x = system(programpath.data());
+    }
+
+    if (x/* && (s.substr(0, 3) == "g++" || run_alive)*/)
+    {
+        if (programpath.substr(0, 3) == "cmp") on_view_diff_pushButton_clicked();
         else system(("subl " + get_path("log.txt", true)).data());
     }
     return x;
@@ -150,17 +163,17 @@ void MainWindow::_run()
         ui->curtest_label->setText(QString(("Running on test " + std::to_string(ui->progressBar->value()+1)).data()));
         ui->curtest_label->repaint();
 
-        if (_system((get_path(get_compiled_name(generator_name), true) + " > " + get_path(input_fullname, true)))) break;
+        if (_system(get_path(get_compiled_name(generator_name), true, false), "", get_path(input_fullname, true, false))) break;
 
         timepoint curtime = get_time();
-        if (_system((get_path(get_compiled_name(solution_name), true) + " < " + get_path(input_fullname, true) + " > " + get_path(solution_output_fullname, true)))) break;
+        if (_system(get_path(get_compiled_name(solution_name), true, false), get_path(input_fullname, true, false), get_path(solution_output_fullname, true, false))) break;
         if (ui->show_time_checkBox->isChecked()) ui->solution_time_label->setText(get_elapsed(curtime));
 
         curtime = get_time();
-        if (_system((get_path(get_compiled_name(brutalsol_name), true) + " < " + get_path(input_fullname, true) + " > " + get_path(brutalsol_output_fullname, true)))) break;
+        if (_system(get_path(get_compiled_name(brutalsol_name), true, false), get_path(input_fullname, true, false), get_path(brutalsol_output_fullname, true, false))) break;
         if (ui->show_time_checkBox->isChecked()) ui->brutalsol_time_label->setText(get_elapsed(curtime));
 
-        if (_system(("cmp " + get_path(solution_output_fullname, true) + " " + get_path(brutalsol_output_fullname, true)).data())) break;
+        if (_system("cmp " + get_path(solution_output_fullname, true) + " " + get_path(brutalsol_output_fullname, true))) break;
 
         ui->progressBar->setValue(ui->progressBar->value()+1);
         QApplication::processEvents();
@@ -188,8 +201,6 @@ void MainWindow::on_run_pushButton_clicked()
     }
 
     run_alive = false;
-    //////////////////////////////////////////////////////////////////////////////////////////
-    //pkill
     ui->run_pushButton->setText("Run");
     ui->build_pushButton->setEnabled(true);
 }

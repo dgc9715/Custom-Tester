@@ -19,6 +19,6 @@ const std::string solution_output_fullname = "solution.out";
 const std::string brutalsol_output_fullname = "brutalsol.out";
 int tests = 1;
 bool run_alive = false;
-const int timer_interval = 500;
+const int time_out = 5000;
 
 #endif // CONFIG_H
