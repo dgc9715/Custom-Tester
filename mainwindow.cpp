@@ -4,8 +4,6 @@
 #include <chrono>
 #include <QDir>
 #include <QFile>
-#include <QTimer>
-#include <QThread>
 #include <QProcess>
 #include <iostream>
 
@@ -28,6 +26,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     if (!QDir(QString(workspace_data_path.data())).exists())
         QDir().mkdir(QString(workspace_data_path.data()));
+
+    ui->timelimit_spinBox->setValue(time_out);
 }
 
 MainWindow::~MainWindow()
@@ -74,6 +74,7 @@ int MainWindow::_system(std::string programpath, std::string inputpath = "", std
             log.write("\n");
             log.close();
         }
+        myprocess->terminate();
     }
     else
     {
@@ -186,12 +187,14 @@ void MainWindow::_run()
     ui->run_pushButton->setText("Run");
     ui->build_pushButton->setEnabled(true);
     ui->test_number_comboBox->setEnabled(true);
+    ui->timelimit_spinBox->setEnabled(true);
 }
 
 void MainWindow::on_run_pushButton_clicked()
 {
     if (!run_alive)
     {
+        ui->timelimit_spinBox->setEnabled(false);
         ui->test_number_comboBox->setEnabled(false);
         ui->build_pushButton->setEnabled(false);
         ui->run_pushButton->setText("Stop");
@@ -233,4 +236,9 @@ void MainWindow::on_test_number_comboBox_currentIndexChanged(int index)
     tests = 1;
     for (int i = 0; i <= index; ++i)
         tests *= 10;
+}
+
+void MainWindow::on_timelimit_spinBox_valueChanged(int arg1)
+{
+    time_out = arg1;
 }

@@ -37,7 +37,7 @@ private slots:
 
     void on_test_number_comboBox_currentIndexChanged(int index);
 
-    //void timer_timeout();
+    void on_timelimit_spinBox_valueChanged(int arg1);
 
 private:
     Ui::MainWindow *ui;
