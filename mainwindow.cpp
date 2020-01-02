@@ -5,7 +5,6 @@
 #include <QDir>
 #include <QFile>
 #include <QProcess>
-#include <iostream>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -55,20 +54,28 @@ int MainWindow::_system(std::string programpath, std::string inputpath = "", std
     int x;
     if (!inputpath.empty() || !outputpath.empty())
     {
-        myprocess->setProgram(QString(programpath.data()));
-        if (!inputpath.empty()) myprocess->setStandardInputFile(QString(inputpath.data()));
-        if (!outputpath.empty()) myprocess->setStandardOutputFile(QString(outputpath.data()));
-        myprocess->start();
+        std::string command = programpath;
+        if (!inputpath.empty()) command += " < " + inputpath;
+        if (!outputpath.empty()) command += " > " + outputpath;
+        command += " 2> " + get_path("log.txt", true);
+        myprocess->start("bash", QStringList() << "-c" << QString(command.data()));
         myprocess->waitForFinished(time_out);
-        x = myprocess->exitCode();
-        if (myprocess->errorString().toStdString() == "Process operation timed out") x = -1;
+        QString errorString = myprocess->errorString();
+        if (myprocess->exitStatus() == QProcess::CrashExit) errorString = "The process crashed", x = -1;
+        else x = myprocess->exitCode();
+        if (errorString.toStdString() == "Process operation timed out") x = -1;
         if (x)
         {
             QFile log(QString(get_path("log.txt", true, false).data()));
+            log.open(QIODevice::ReadOnly | QIODevice::Text);
+            QByteArray log_text = log.readAll();
+            log.close();
             log.open(QIODevice::WriteOnly | QIODevice::Text);
-            log.write(programpath.data());
+            log.write(myprocess->readAllStandardError());
+            log.write("\n\n");
+            log.write(log_text);
             log.write("\n");
-            log.write(myprocess->errorString().toStdString().data());
+            log.write(errorString.toStdString().data());
             log.write("\n");
             log.write(("Exit Code: " + std::to_string(x)).data());
             log.write("\n");
@@ -164,14 +171,14 @@ void MainWindow::_run()
         ui->curtest_label->setText(QString(("Running on test " + std::to_string(ui->progressBar->value()+1)).data()));
         ui->curtest_label->repaint();
 
-        if (_system(get_path(get_compiled_name(generator_name), true, false), "", get_path(input_fullname, true, false))) break;
+        if (_system(get_path(get_compiled_name(generator_name), true), "", get_path(input_fullname, true))) break;
 
         timepoint curtime = get_time();
-        if (_system(get_path(get_compiled_name(solution_name), true, false), get_path(input_fullname, true, false), get_path(solution_output_fullname, true, false))) break;
+        if (_system(get_path(get_compiled_name(solution_name), true), get_path(input_fullname, true), get_path(solution_output_fullname, true))) break;
         if (ui->show_time_checkBox->isChecked()) ui->solution_time_label->setText(get_elapsed(curtime));
 
         curtime = get_time();
-        if (_system(get_path(get_compiled_name(brutalsol_name), true, false), get_path(input_fullname, true, false), get_path(brutalsol_output_fullname, true, false))) break;
+        if (_system(get_path(get_compiled_name(brutalsol_name), true), get_path(input_fullname, true), get_path(brutalsol_output_fullname, true))) break;
         if (ui->show_time_checkBox->isChecked()) ui->brutalsol_time_label->setText(get_elapsed(curtime));
 
         if (_system("cmp " + get_path(solution_output_fullname, true) + " " + get_path(brutalsol_output_fullname, true))) break;
