@@ -1,11 +1,15 @@
 # Custom-Tester
 
+![Image of Yaktocat](https://github.com/dgc9715/Custom-Tester/blob/master/custom-tester.png)
+
+### Getting started
+
 Create **custom_tester.cfg** in home directory with four lines:
 
-- Line 1: Workspace folder direction
-- Line 2: Build flags
-- Line 3: Command to open text file ($FILE)
-- Line 4: Command to compare text files ($FILE1 and $FILE2)
+1. Workspace folder direction
+1. Build flags
+1. Command to open text file ($FILE)
+1. Command to compare text files ($FILE1 and $FILE2)
 
 Example of my configuration:
 
