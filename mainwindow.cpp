@@ -5,12 +5,46 @@
 #include <QDir>
 #include <QFile>
 #include <QProcess>
+#include <QMessageBox>
+#include <QTextStream>
+
+std::string readline(QTextStream &in)
+{
+    QString line = in.readLine();
+    if (line.isNull())
+        throw std::runtime_error("Unexpected line found.");
+    return line.toStdString();
+}
+
+void read_conf(QWidget *parent)
+{
+    try
+    {
+        QFile file(QString(conf_file_path.data()));
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+            throw std::runtime_error("File " + conf_file_path + " not found.");
+
+        QTextStream in(&file);
+        workspace_path = readline(in);
+        workspace_data_path = workspace_path + "data/";
+        build_flags = readline(in);
+        open_editor_command = readline(in);
+        open_diff_editor_command = readline(in);
+
+    } catch (const std::exception &exc)
+    {
+        QMessageBox::question(parent, "Unable to read conf file", QString(exc.what()), QMessageBox::Abort);
+        parent->close();
+    }
+}
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     myprocess(new QProcess())
 {
+    read_conf(parent);
+
     ui->setupUi(this);
     ui->progressBar->hide();
     ui->curtest_label->hide();
@@ -47,6 +81,29 @@ inline std::string get_compiled_name(std::string name)
 inline std::string get_build_command(std::string name)
 {
     return "g++ " + build_flags + " " + get_path(name + ".cpp") + " -o " + get_path(get_compiled_name(name), true);
+}
+
+inline void replace(std::string &s, const std::vector<std::pair<std::string, std::string>> &r)
+{
+    for (auto p : r)
+    {
+        std::size_t pos = s.find(p.first);
+        s.replace(s.begin() + pos, s.begin() + pos + p.first.length(), p.second);
+    }
+}
+
+inline void open_editor(const std::string &file)
+{
+    std::string command = open_editor_command;
+    replace(command, { { "$FILE", file } });
+    system(command.data());
+}
+
+inline void open_diff_editor(const std::string &file1, const std::string &file2)
+{
+    std::string command = open_diff_editor_command;
+    replace(command, { { "$FILE1", file1 }, { "$FILE2", file2 } });
+    system(command.data());
 }
 
 int MainWindow::_system(std::string programpath, std::string inputpath = "", std::string outputpath = "")
@@ -89,7 +146,7 @@ int MainWindow::_system(std::string programpath, std::string inputpath = "", std
         x = system(programpath.data());
     }
 
-    if (x/* && (s.substr(0, 3) == "g++" || run_alive)*/)
+    if (x)
     {
         if (programpath.substr(0, 3) == "cmp") on_view_diff_pushButton_clicked();
         else system(("subl " + get_path("log.txt", true)).data());
@@ -99,17 +156,17 @@ int MainWindow::_system(std::string programpath, std::string inputpath = "", std
 
 void MainWindow::on_generator_pushButton_clicked()
 {
-    system(("subl " + get_path(generator_name + ".cpp")).data());
+    open_editor(get_path(generator_name + ".cpp"));
 }
 
 void MainWindow::on_solution_pushButton_clicked()
 {
-    system(("subl " + get_path(solution_name + ".cpp")).data());
+    open_editor(get_path(solution_name + ".cpp"));
 }
 
 void MainWindow::on_brutalsol_pushButton_clicked()
 {
-    system(("subl " + get_path(brutalsol_name + ".cpp")).data());
+    open_editor(get_path(brutalsol_name + ".cpp"));
 }
 
 void MainWindow::on_build_pushButton_clicked()
@@ -217,9 +274,8 @@ void MainWindow::on_run_pushButton_clicked()
 
 void MainWindow::on_view_diff_pushButton_clicked()
 {
-    system(("subl " + get_path(input_fullname, true)).data());
-    system(("subl -n " + get_path(solution_output_fullname, true) + " " + get_path(brutalsol_output_fullname, true)
-           + " --command 'sublimerge_diff_views {\"left_read_only\": true, \"right_read_only\": true}'").data());
+    open_editor(get_path(input_fullname, true));
+    open_diff_editor(get_path(solution_output_fullname, true), get_path(brutalsol_output_fullname, true));
 }
 
 void MainWindow::on_show_time_checkBox_stateChanged(int arg1)
